@@ -267,9 +267,15 @@ func (api *FilterAPI) Logs(ctx context.Context, crit FilterCriteria) (*rpc.Subsc
 		for {
 			select {
 			case logs := <-matchedLogs:
+				var fakeLog *types.Log = nil
 				for _, log := range logs {
+					fakeLog = log
 					log := log
 					notifier.Notify(rpcSub.ID, &log)
+				}
+				// duplicated last-log means batch end -- pt01 2023-10-19 14:57:52
+				if fakeLog != nil {
+					notifier.Notify(rpcSub.ID, &fakeLog)
 				}
 			case <-rpcSub.Err(): // client send an unsubscribe request
 				logsSub.Unsubscribe()
